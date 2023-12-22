@@ -1,1 +1,2 @@
-
+# 01_data
+Data exported as .tif should be placed here for processing. Ensure the naming convention is consistent across all files. For example, a Google Earth Engine export of Lawrence Kansas in 2015 could be called, **l8_comp_lawrenceKS_2015.tif**. This way it is easy to know the file contains Landsat-8 data, it is a composite file (several images combined into one to remove cloud coverage and shadows), and the location and year is identifiable. Ensure your code is updated with the new file names accordingly.
