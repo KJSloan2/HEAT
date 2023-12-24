@@ -1,6 +1,6 @@
 # Urban Heat Island Analysis
 ## Process
-![Process Overview]([[https://example.com/path/to/your/image.jpg]
+![Process Overview]([[https://example.com/path/to/your/image.jpg])
 
 ## Scripts
 
