@@ -1,5 +1,6 @@
 # Urban Heat Island Analysis
-
+## Process
+![Data Processing Overview]([https://example.com/path/to/your/image.jpg](https://github.com/KJSloan2/Urban_Heat_Island_Analysis/blob/bfbba0aa3b043a03b0b2b878097bc7c262bd0f8d/00_resources/images/23120700_UHI_dataAnalysisProcess.jpg))
 ## Scripts
 
 ### lstNormalize.py
