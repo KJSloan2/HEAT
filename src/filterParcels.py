@@ -4,9 +4,7 @@ import json
 import pandas as pd
 import numpy as np
 
-import geopandas as gpd
 import fiona
-from shapely.geometry import Point, Polygon
 ######################################################################################
 
 '''taxpaname_1', 'school', 'city', 'propnam', 'taxpaadd_3', 'prop_cl',
@@ -26,21 +24,20 @@ parcelTypes_desc = list(df_parcelTypes["DESC"])
 
 #get the bounding box of the ROI for roi.json
 roi_json = json.load(open("%s%s" % (r"00_resources/","roi.json")))
-roi_bb = roi_json["roi_main"]
+
+roi_bb = [list(map(float, roi_json["roi_main"][0])), list(map(float, roi_json["roi_main"][1]))]
+bb_center = [(roi_bb[0][0] + roi_bb[1][0])/2, (roi_bb[0][1] + roi_bb[1][1])/2]
+
 roi_bb_pt0 = roi_bb[0]
 roi_bb_pt2 = roi_bb[1]
-roi_bb_width = roi_bb_pt2[0] - roi_bb_pt0[0]
-roi_bb_height = roi_bb_pt0[1] - roi_bb_pt2[1]
+#roi_bb_width = roi_bb_pt2[0] - roi_bb_pt0[0]
+#roi_bb_height = roi_bb_pt0[1] - roi_bb_pt2[1]
+
 #make a polygon from the ROI bounding box
 #The polygon will be used to determine if a parcel is in the ROI
-roi_polygon = [
-	(roi_bb_pt0),
-	(roi_bb_pt0[0]+roi_bb_width,roi_bb_pt0[1]),
-	(roi_bb_pt2),
-	(roi_bb_pt0[0],roi_bb_pt2[1])
-]
-#Make the polygon using the Polygon methon from shapely.geometry
-roi_polygon = Polygon(roi_polygon)
+
+def is_point_in_bb(bb, pt):
+    return bb[0][1] <= pt[1] <= bb[1][1] and bb[0][0] >= pt[0] >= bb[1][0]
 
 #Use fiona to read the geojson
 with fiona.open(r"01_data/parcels.geojson") as src:
@@ -57,26 +54,23 @@ with fiona.open(r"01_data/parcels.geojson") as src:
 			geometry_type = geometry['type']
 			if geometry_type.lower() == "multipolygon":
 				geometry_coords = geometry['coordinates']
-				'''cycle through the points in the parcel's polygons and calculate
-				the interpolated center of the polygon'''
-				pool_x = []
+				#cycle through the points in the parcel's polygons and calculate
+				#the interpolated center of the polygon
 				pool_y = []
+				pool_x = []
 				for polygon in geometry_coords:
 					for coords in polygon:
 						for coord in coords:
-							pool_x.append(float(coord[0]))
 							pool_y.append(float(coord[1]))
+							pool_x.append(float(coord[0]))
 				cx = np.mean(pool_x)
 				cy = np.mean(pool_y)
-				#Use the interpolated center of the parcel to make a point with shapely.geometry
-				point = Point((cy,cx))
-				#test if the point is in the ROI
-				is_within = point.within(roi_polygon)
+				parcelCenter = [cy,cx]
+				#test if the point is in the ROI+
 				#if the point is in the ROI, write the parcel to the csv
-				if is_within:
+				if is_point_in_bb(roi_bb, parcelCenter):
 					print(cy,cx)
 					writer_dataOut.writerow([objectid,prop_cl,prop_category,bldg_cl,area_feet,cx,cy])
 		except:
 			pass
-
 print("DONE")
