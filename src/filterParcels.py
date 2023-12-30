@@ -14,31 +14,24 @@ import fiona
 'st_num', 'taxpaname_2', 'legal_2', 'taxpasta', 'mutiacct', 'taxpaadd_1',
 'dacouncil', 'sptbcode', 'area_feet', 'st_name', 'mapsco_gr', 'bldg_cl'''
 
-write_dataOut = open("%s%s" % (r"02_output/","parcels.csv"), 'w',newline='', encoding='utf-8')
-writer_dataOut = csv.writer(write_dataOut)
-writer_dataOut.writerow(["OBJECTID","PROP_CL","BLDG_CL","AREA_FT","X","Y"])
-
 df_parcelTypes = pd.read_csv(str("%s%s" % (r"00_resources/","parcelTypes.csv")),encoding="utf-8")
 parcelTypes_category = list(df_parcelTypes["TYPE"])
 parcelTypes_desc = list(df_parcelTypes["DESC"])
 
 #get the bounding box of the ROI for roi.json
 roi_json = json.load(open("%s%s" % (r"00_resources/","roi.json")))
-
 roi_bb = [list(map(float, roi_json["roi_main"][0])), list(map(float, roi_json["roi_main"][1]))]
-bb_center = [(roi_bb[0][0] + roi_bb[1][0])/2, (roi_bb[0][1] + roi_bb[1][1])/2]
 
+bb_center = [(roi_bb[0][0] + roi_bb[1][0])/2, (roi_bb[0][1] + roi_bb[1][1])/2]
 roi_bb_pt0 = roi_bb[0]
 roi_bb_pt2 = roi_bb[1]
 #roi_bb_width = roi_bb_pt2[0] - roi_bb_pt0[0]
 #roi_bb_height = roi_bb_pt0[1] - roi_bb_pt2[1]
 
-#make a polygon from the ROI bounding box
-#The polygon will be used to determine if a parcel is in the ROI
-
 def is_point_in_bb(bb, pt):
     return bb[0][1] <= pt[1] <= bb[1][1] and bb[0][0] >= pt[0] >= bb[1][0]
 
+filteredParcels = {}
 #Use fiona to read the geojson
 with fiona.open(r"01_data/parcels.geojson") as src:
 	for feature in src:
@@ -47,7 +40,7 @@ with fiona.open(r"01_data/parcels.geojson") as src:
 		try:
 			prop_cl = " ".join(prop_cl.split(","))
 			bldg_cl = " ".join(properties['bldg_cl'].split(","))
-			area_feet = properties['area_feet']
+			area_ft = properties['area_feet']
 			objectid = properties['objectid']
 			prop_category = parcelTypes_category[parcelTypes_desc.index(prop_cl)]
 			geometry = feature['geometry']
@@ -70,7 +63,22 @@ with fiona.open(r"01_data/parcels.geojson") as src:
 				#if the point is in the ROI, write the parcel to the csv
 				if is_point_in_bb(roi_bb, parcelCenter):
 					print(cy,cx)
-					writer_dataOut.writerow([objectid,prop_cl,prop_category,bldg_cl,area_feet,cx,cy])
+					filteredParcels[objectid] = {
+						"properties":{
+							"prop_cl":prop_cl,
+							"bldb_cl":bldg_cl,
+							"area_ft":area_ft,
+							"calculations":{"lst":None,"ndvi":None}
+						},
+						"geometry":{
+							"center":{"type":"point","coords":[cy,cx]},
+							"boundary":{"type":"multipolygon","coords":geometry['coordinates']}
+						}
+					}
 		except:
 			pass
+
+with open(r"02_output/filteredParcels.json", "w", encoding='utf-8') as output_json:
+	output_json.write(json.dumps(filteredParcels, indent=2, ensure_ascii=False))
+
 print("DONE")
