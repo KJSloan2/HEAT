@@ -23,7 +23,7 @@ def get_gaz(tab,labels,fnames_):
 	gaz_ = {}
 	for l in labels:
 		gaz_[l] = []
-	with open(str("%s%s" % (paths_["gaz"],fnames_[tab])),encoding="utf-8") as read_gaz:
+	with open(str("%s%s" % (r"00_resources\\",fnames_[tab])),encoding="utf-8") as read_gaz:
 		gaz_lines = read_gaz.readlines()
 		headers_ = list(map(lambda h: str(h).strip(),gaz_lines[0].split("	")))
 		print(headers_)
